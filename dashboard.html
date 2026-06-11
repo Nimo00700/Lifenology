@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라이프놀로지 랩 — GEO 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0D1B5E;--blue:#1A6EFF;--bg:#EEF2F9;--card:#fff;
+  --text:#14172B;--muted:#64738A;--border:#DDE4F0;
+  --green:#059669;--green-bg:#ECFDF5;
+  --amber:#D97706;--purple:#7C3AED;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;}
+
+/* ── Header ── */
+.hdr{background:var(--navy);height:56px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;}
+.hdr-left{display:flex;align-items:center;gap:14px;}
+.sl-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:7px;padding:4px 10px;color:#fff;font-size:11px;font-weight:700;}
+.hdr-title{color:#fff;font-size:14px;font-weight:600;}
+.hdr-sub{color:rgba(255,255,255,.38);font-size:10px;margin-top:2px;}
+.hdr-right{display:flex;align-items:center;gap:10px;}
+.status-pill{display:flex;align-items:center;gap:6px;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:500;border:1px solid;}
+.status-auto{background:rgba(5,150,105,.15);border-color:rgba(5,150,105,.35);color:#34D399;}
+.status-manual{background:rgba(217,119,6,.15);border-color:rgba(217,119,6,.35);color:#FCD34D;}
+.status-dot{width:7px;height:7px;border-radius:50%;animation:blink 2s infinite;}
+.dot-green{background:#34D399;}
+.dot-amber{background:#FCD34D;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hdr-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit;}
+.hdr-btn:hover{background:rgba(255,255,255,.18);}
+
+/* ── Upload ── */
+.upload-wrap{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+.upload-card{background:var(--card);border-radius:16px;border:1px solid var(--border);padding:48px 56px;text-align:center;max-width:480px;width:100%;}
+.upload-icon{width:58px;height:58px;background:var(--bg);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;}
+.upload-title{font-size:17px;font-weight:700;margin-bottom:8px;}
+.upload-desc{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:22px;}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:26px 16px;cursor:pointer;transition:all .2s;}
+.drop-zone:hover,.drop-zone.over{border-color:var(--blue);background:#F0F5FF;}
+.drop-text{font-size:13px;color:var(--muted);}
+.drop-text strong{color:var(--blue);}
+.file-hint{margin-top:12px;background:var(--bg);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:left;line-height:1.7;}
+.err-msg{margin-top:10px;color:#EF4444;font-size:12px;display:none;}
+
+/* ── Dashboard ── */
+.dash{padding:16px 24px 40px;}
+.info-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.chip{background:var(--card);border:.5px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+.chip b{color:var(--text);font-weight:600;}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.kpi{background:var(--card);border-radius:12px;border:.5px solid var(--border);padding:15px 17px 13px;position:relative;overflow:hidden;}
+.kpi-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;}
+.kpi-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px;}
+.kpi-val{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;letter-spacing:-1px;line-height:1;margin-bottom:7px;}
+.kpi-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.kpi-note{font-size:10px;color:var(--muted);}
+.target-pill{background:#EBF1FF;color:var(--blue);font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;margin-left:auto;}
+.badges{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;}
+
+/* ── Chart panels ── */
+.charts-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.panel{background:var(--card);border-radius:12px;border:.5px solid var(--border);padding:17px 19px;}
+.panel.full{grid-column:1/-1;}
+.p-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+.p-sub{font-size:10px;color:var(--muted);margin-bottom:13px;}
+
+/* ── Log ── */
+.log-panel{background:var(--card);border-radius:12px;border:.5px solid var(--border);padding:17px 19px;}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:0 0 10px;border-bottom:.5px solid var(--border);}
+.tbl td{padding:8px 0;border-bottom:.5px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.cy{background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;}
+.cn{background:#F4F4F6;color:var(--muted);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;}
+.mtag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;white-space:nowrap;}
+.qtxt{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mono{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;}
+
+@media(max-width:860px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-row2{grid-template-columns:1fr;}
+  .upload-card{padding:32px 24px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="sl-badge">삼성생명</div>
+    <div>
+      <div class="hdr-title">라이프놀로지 랩 — GEO 대시보드</div>
+      <div class="hdr-sub" id="hdrSub">데이터 로드 중...</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="status-pill status-auto" id="statusPill" style="display:none">
+      <div class="status-dot dot-green"></div>
+      <span id="statusText">GitHub 자동 연결</span>
+    </div>
+    <button class="hdr-btn" id="refreshBtn" style="display:none" onclick="autoFetch()">↺ 새로고침</button>
+    <button class="hdr-btn" id="uploadBtn" style="display:none" onclick="showUpload()">+ 파일 업로드</button>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="upload-wrap" id="uploadWrap" style="display:none">
+  <div class="upload-card">
+    <div class="upload-icon">📊</div>
+    <div class="upload-title">GEO 측정 결과 불러오기</div>
+    <div class="upload-desc">
+      <strong>results_all.csv</strong> 파일을 아래에 끌어다 놓으면<br>
+      일자별 누적 데이터로 대시보드가 자동 생성됩니다.
+    </div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fi').click()">
+      <div class="drop-text">📂 <strong>파일을 여기에 끌어다 놓거나 클릭</strong></div>
+      <div class="drop-text" style="margin-top:5px;font-size:11px;">results_all.csv</div>
+    </div>
+    <input type="file" id="fi" accept=".csv" style="display:none">
+    <div class="file-hint">필요 컬럼: date · model · question · cited · sentiment</div>
+    <div class="err-msg" id="errMsg"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dashWrap" style="display:none">
+  <div class="info-bar" id="infoBar"></div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-bar" style="background:var(--blue)"></div>
+      <div class="kpi-lbl">AI 인용률 (Citation Rate)</div>
+      <div class="kpi-val" id="vCit" style="color:var(--blue)">—</div>
+      <div class="kpi-foot"><span class="kpi-note" id="nCit"></span><span class="target-pill">목표 20–30%</span></div>
+      <div class="badges" id="bCit"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-bar" style="background:var(--green)"></div>
+      <div class="kpi-lbl">브랜드 감성 지수</div>
+      <div class="kpi-val" id="vSent" style="color:var(--green)">—</div>
+      <div class="kpi-foot"><span class="kpi-note" id="nSent"></span><span class="target-pill">목표 0.75↑</span></div>
+      <div class="badges" id="bSent"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-bar" style="background:var(--purple)"></div>
+      <div class="kpi-lbl">총 쿼리 수</div>
+      <div class="kpi-val" id="vTotal" style="color:var(--purple)">—</div>
+      <div class="kpi-foot"><span class="kpi-note" id="nTotal"></span></div>
+      <div class="badges" id="bTotal"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-bar" style="background:var(--amber)"></div>
+      <div class="kpi-lbl">누적 측정일</div>
+      <div class="kpi-val" id="vDays" style="color:var(--amber)">—</div>
+      <div class="kpi-foot"><span class="kpi-note" id="nDays"></span></div>
+      <div class="badges" id="bDays"></div>
+    </div>
+  </div>
+
+  <!-- Row: 인용률 bar + 감성 bar -->
+  <div class="charts-row2">
+    <div class="panel">
+      <div class="p-title">모델별 AI 인용률</div>
+      <div class="p-sub">전체 기간 누적 · 라이프놀로지랩 답변 포함 비율 (%)</div>
+      <div style="position:relative;height:200px"><canvas id="citC"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="p-title">모델별 브랜드 감성 지수</div>
+      <div class="p-sub">전체 기간 누적 · 인용 건 긍정 맥락 척도 (0–1점)</div>
+      <div style="position:relative;height:200px"><canvas id="sentC"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Trend chart (full width) -->
+  <div class="charts-row2" style="margin-bottom:14px">
+    <div class="panel full">
+      <div class="p-title">📈 일자별 AI 인용률 추이</div>
+      <div class="p-sub" id="trendSub">모델별 인용률 변화 — 날짜가 쌓일수록 추이가 선명해집니다</div>
+      <div style="position:relative;height:230px"><canvas id="trendC"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Query Log -->
+  <div class="log-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div>
+        <div class="p-title">쿼리 로그</div>
+        <div class="p-sub" style="margin-bottom:0" id="logMeta"></div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:40%">질문</th>
+            <th>모델</th>
+            <th>인용</th>
+            <th>감성</th>
+            <th>날짜</th>
+          </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── Model colors ──────────────────────────────────────────────
+const MC = {
+  'Llama-3.3-70B':        {bg:'rgba(16,163,127,.85)', bdr:'#10A37F', s:'background:#E8FAF5;color:#10A37F'},
+  'Gemini-1.5-Flash':     {bg:'rgba(66,133,244,.85)',  bdr:'#4285F4', s:'background:#EAF1FE;color:#4285F4'},
+  'Llama-3.1-8B':         {bg:'rgba(124,58,237,.85)',  bdr:'#7C3AED', s:'background:#F5F3FF;color:#7C3AED'},
+  'Gemma-2-9B':           {bg:'rgba(217,119,6,.85)',   bdr:'#D97706', s:'background:#FEF3E2;color:#D97706'},
+  'llama-3.1-8b-instant': {bg:'rgba(124,58,237,.85)',  bdr:'#7C3AED', s:'background:#F5F3FF;color:#7C3AED'},
+};
+const MF=[
+  {bg:'rgba(16,163,127,.85)', bdr:'#10A37F', s:'background:#E8FAF5;color:#10A37F'},
+  {bg:'rgba(66,133,244,.85)', bdr:'#4285F4', s:'background:#EAF1FE;color:#4285F4'},
+  {bg:'rgba(124,58,237,.85)', bdr:'#7C3AED', s:'background:#F5F3FF;color:#7C3AED'},
+  {bg:'rgba(217,119,6,.85)',  bdr:'#D97706', s:'background:#FEF3E2;color:#D97706'},
+];
+function mc(m,i){return MC[m]||MF[i%MF.length];}
+function sn(m){return m.replace('Gemini-1.5-Flash','Gemini').replace('Llama-3.3-70B','Llama 3.3').replace('Llama-3.1-8B','Llama 3.1').replace('llama-3.1-8b-instant','Llama 3.1');}
+
+let cI=null,sI=null,tI=null;
+
+// ── Auto-fetch on load ────────────────────────────────────────
+window.addEventListener('load', async ()=>{
+  try {
+    const resp = await fetch('results_all.csv?t='+Date.now());
+    if(resp.ok){
+      const txt = await resp.text();
+      if(txt.trim().length > 50){
+        const r = Papa.parse(txt,{header:true,skipEmptyLines:true});
+        if(r.data.length>0){
+          build(r.data,'results_all.csv');
+          setMode('auto');
+          return;
+        }
+      }
+    }
+  } catch(e){}
+  setMode('manual');
+});
+
+function setMode(mode){
+  const pill = document.getElementById('statusPill');
+  const sub  = document.getElementById('hdrSub');
+  if(mode==='auto'){
+    pill.style.display='flex';
+    pill.className='status-pill status-auto';
+    document.getElementById('statusText').textContent='GitHub 자동 연결';
+    document.getElementById('refreshBtn').style.display='block';
+    sub.textContent='GitHub Actions 데이터 자동 반영 중';
+  } else {
+    pill.style.display='flex';
+    pill.className='status-pill status-manual';
+    document.getElementById('statusText').textContent='수동 모드';
+    document.getElementById('uploadBtn').style.display='block';
+    sub.textContent='CSV 파일을 업로드해서 데이터를 확인하세요';
+    document.getElementById('uploadWrap').style.display='flex';
+  }
+}
+
+async function autoFetch(){
+  document.getElementById('statusText').textContent='갱신 중...';
+  try{
+    const resp = await fetch('results_all.csv?t='+Date.now());
+    if(resp.ok){
+      const txt = await resp.text();
+      const r = Papa.parse(txt,{header:true,skipEmptyLines:true});
+      if(r.data.length>0){ build(r.data,'results_all.csv'); }
+    }
+  }catch(e){}
+  document.getElementById('statusText').textContent='GitHub 자동 연결';
+}
+
+// ── File upload (manual) ──────────────────────────────────────
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');go(e.dataTransfer.files[0]);});
+document.getElementById('fi').addEventListener('change',e=>go(e.target.files[0]));
+
+function go(f){
+  const em=document.getElementById('errMsg');
+  if(!f)return;
+  if(!f.name.endsWith('.csv')){em.style.display='block';em.textContent='CSV 파일만 가능합니다.';return;}
+  em.style.display='none';
+  Papa.parse(f,{header:true,skipEmptyLines:true,
+    complete:r=>{
+      if(!r.data||!r.data.length){em.style.display='block';em.textContent='파일이 비어있거나 형식 오류입니다.';return;}
+      build(r.data,f.name);
+      document.getElementById('uploadWrap').style.display='none';
+    },
+    error:e=>{em.style.display='block';em.textContent='오류: '+e.message;}
+  });
+}
+
+function showUpload(){
+  document.getElementById('uploadWrap').style.display='flex';
+  document.getElementById('dashWrap').style.display='none';
+}
+
+// ── Build dashboard ───────────────────────────────────────────
+function build(raw, fname){
+  const rows = raw.map(r=>{const n={};Object.keys(r).forEach(k=>n[k.trim()]=(r[k]||'').trim());return n;});
+  const cited = rows.filter(r=>r.cited==='TRUE');
+  const total = rows.length;
+  const cr    = total>0?(cited.length/total*100).toFixed(1):'0.0';
+  const ss    = cited.map(r=>parseFloat(r.sentiment)).filter(s=>!isNaN(s)&&s>0);
+  const avgS  = ss.length>0?(ss.reduce((a,b)=>a+b,0)/ss.length).toFixed(2):'0.00';
+  const dates = [...new Set(rows.map(r=>r.date).filter(Boolean))].sort();
+  const mods  = [...new Set(rows.map(r=>r.model).filter(Boolean))];
+
+  const ms = mods.map((m,i)=>{
+    const mr=rows.filter(r=>r.model===m);
+    const mc2=mr.filter(r=>r.cited==='TRUE');
+    const ss2=mc2.map(r=>parseFloat(r.sentiment)).filter(s=>!isNaN(s)&&s>0);
+    return{name:m,total:mr.length,cited:mc2.length,
+      cr:mr.length>0?(mc2.length/mr.length*100).toFixed(1):'0.0',
+      as:ss2.length>0?(ss2.reduce((a,b)=>a+b,0)/ss2.length).toFixed(2):'0.00',
+      c:mc(m,i)};
+  });
+
+  // Info bar
+  document.getElementById('infoBar').innerHTML=[
+    `<div class="chip">파일 <b>${fname}</b></div>`,
+    `<div class="chip">기간 <b>${dates[0]||'—'} ~ ${dates[dates.length-1]||'—'}</b></div>`,
+    `<div class="chip">총 쿼리 <b>${total}회</b></div>`,
+    `<div class="chip">누적 <b>${dates.length}일</b></div>`,
+    `<div class="chip">AI 모델 <b>${mods.join(' / ')}</b></div>`,
+  ].join('');
+  document.getElementById('hdrSub').textContent=`${fname} · 누적 ${dates.length}일 · 총 ${total}회 쿼리`;
+
+  // KPIs
+  set('vCit',cr+'%'); set('nCit',`전체 ${total}회 중 ${cited.length}회`);
+  set('bCit',ms.map(m=>`<span class="badge" style="${m.c.s}">${sn(m.name)} ${m.cr}%</span>`).join(''));
+  set('vSent',avgS); set('nSent',`인용 ${cited.length}건 평균`);
+  set('bSent',ms.map(m=>`<span class="badge" style="${m.c.s}">${sn(m.name)} ${m.as}</span>`).join(''));
+  set('vTotal',total.toLocaleString()); set('nTotal',`${mods.length}개 모델`);
+  set('bTotal',ms.map(m=>`<span class="badge" style="${m.c.s}">${sn(m.name)} ${m.total}회</span>`).join(''));
+  set('vDays',dates.length+'일'); set('nDays',`${dates[0]||''} 부터`);
+  set('bDays',ms.map(m=>`<span class="badge" style="${m.c.s}">${sn(m.name)} ${m.cited}건 인용</span>`).join(''));
+
+  // Bar: Citation by model
+  if(cI)cI.destroy();
+  cI=new Chart(document.getElementById('citC').getContext('2d'),{
+    type:'bar',
+    data:{labels:ms.map(m=>sn(m.name)),
+      datasets:[{label:'인용률(%)',data:ms.map(m=>parseFloat(m.cr)),
+        backgroundColor:ms.map(m=>m.c.bg),borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`인용률: ${c.parsed.y}%`}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#64738A'}},
+              y:{min:0,max:100,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:10},color:'#64738A',callback:v=>v+'%'}}}}
+  });
+
+  // Bar: Sentiment by model
+  if(sI)sI.destroy();
+  sI=new Chart(document.getElementById('sentC').getContext('2d'),{
+    type:'bar',
+    data:{labels:ms.map(m=>sn(m.name)),
+      datasets:[{label:'감성 지수',data:ms.map(m=>parseFloat(m.as)),
+        backgroundColor:ms.map(m=>m.c.bg),borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`감성: ${c.parsed.y.toFixed(2)}`}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#64738A'}},
+              y:{min:0,max:1,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:10},color:'#64738A',stepSize:.25,callback:v=>v.toFixed(2)}}}}
+  });
+
+  // Line: Daily trend
+  const trendData = buildTrend(rows, dates, mods);
+  if(tI)tI.destroy();
+  tI=new Chart(document.getElementById('trendC').getContext('2d'),{
+    type:'line',
+    data:{labels:dates.map(d=>d.slice(5)), // MM-DD
+      datasets:mods.map((m,i)=>{
+        const col=mc(m,i);
+        return{label:sn(m),data:trendData[m],borderColor:col.bdr,
+          backgroundColor:'transparent',borderWidth:2.5,tension:0.35,
+          pointRadius:4,pointBackgroundColor:col.bdr,spanGaps:true};
+      })},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{font:{size:11},color:'#64738A',usePointStyle:true,pointStyleWidth:8}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y}%`}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:10},color:'#64738A'}},
+        y:{min:0,max:100,grid:{color:'rgba(0,0,0,0.04)'},
+           ticks:{font:{size:10},color:'#64738A',callback:v=>v+'%'}}
+      }}
+  });
+  if(dates.length===1){
+    document.getElementById('trendSub').textContent=
+      '현재 1일치 데이터입니다. 매일 측정이 쌓이면 추이가 선명해집니다.';
+  }
+
+  // Log
+  const cRows=cited.slice().reverse();
+  const nRows=rows.filter(r=>r.cited!=='TRUE').slice().reverse();
+  const log=[...cRows,...nRows].slice(0,60);
+  document.getElementById('logMeta').textContent=`최근 ${log.length}건 · 인용 항목 우선`;
+  document.getElementById('logBody').innerHTML=log.map(r=>{
+    const mi=mods.indexOf(r.model);const col=mc(r.model,mi>=0?mi:0);
+    const isC=r.cited==='TRUE';const sv=parseFloat(r.sentiment);
+    return`<tr>
+      <td><span class="qtxt" title="${r.question}">"${r.question}"</span></td>
+      <td><span class="mtag" style="${col.s}">${sn(r.model)||'—'}</span></td>
+      <td><span class="${isC?'cy':'cn'}">${isC?'인용 ✓':'미인용'}</span></td>
+      <td><span class="mono">${isC&&!isNaN(sv)?sv.toFixed(2):'—'}</span></td>
+      <td><span class="mono">${r.date||'—'}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('dashWrap').style.display='block';
+  document.getElementById('uploadWrap').style.display='none';
+}
+
+function buildTrend(rows, dates, mods){
+  const out={};
+  mods.forEach(m=>{
+    out[m]=dates.map(d=>{
+      const dr=rows.filter(r=>r.date===d&&r.model===m);
+      if(!dr.length)return null;
+      const ci=dr.filter(r=>r.cited==='TRUE').length;
+      return parseFloat((ci/dr.length*100).toFixed(1));
+    });
+  });
+  return out;
+}
+
+function set(id,v){const el=document.getElementById(id);if(el)el.innerHTML=v;}
+</script>
+</body>
+</html>
