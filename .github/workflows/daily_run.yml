@@ -16,9 +16,8 @@ jobs:
         
       - run: pip install groq google-generativeai sentence-transformers
       
-      # 💡 이 아래 두 줄을 주목해주세요! working-directory 설정을 추가했습니다.
       - run: python geo_measure_free.py
-        working-directory: .
+        working-directory: ${{ github.workspace }}
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
