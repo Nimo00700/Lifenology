@@ -63,7 +63,7 @@ QUESTIONS_FILE = "questions.csv"
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+gemini_model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 print("⟳ 임베딩 모델 로드 중... (첫 실행 시 1~2분 소요, 이후엔 빠름)")
 embed_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
