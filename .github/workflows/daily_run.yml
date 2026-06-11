@@ -2,35 +2,45 @@ name: Daily GEO Measurement
 
 on:
   schedule:
-    - cron: '0 1 * * *'   # 매일 오전 10시 KST
-  workflow_dispatch:      # 수동 실행 버튼
+    - cron: '0 1 * * *'   # 매일 오전 10:00 KST (= 01:00 UTC)
+  workflow_dispatch:        # 수동 실행 버튼 (Actions 탭에서 즉시 실행 가능)
 
 jobs:
   measure:
     runs-on: ubuntu-latest
-    
-    # 💡 이 부분이 추가되었습니다 (자동 저장할 수 있는 권한 부여)
+
     permissions:
-      contents: write
-      
+      contents: write       # results_all.csv 를 레포에 커밋하기 위해 필요
+
     steps:
+      # 1. 코드 체크아웃
       - uses: actions/checkout@v4
-      
+
+      # 2. Python 설치
       - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-        
-      - run: pip install groq google-generativeai sentence-transformers
-      
-      - run: python geo_measure_free.py
-        working-directory: ${{ github.workspace }}
+        with:
+          python-version: '3.12'
+
+      # 3. 패키지 설치 (google-genai: 신버전, google-generativeai 대체)
+      - name: Install packages
+        run: pip install groq google-genai sentence-transformers
+
+      # 4. GEO 측정 스크립트 실행
+      #    working-directory 미지정 → 기본값인 github.workspace 사용
+      #    (= 레포 루트 = questions.csv 가 있는 위치)
+      - name: Run GEO measurement
+        run: python geo_measure_free.py
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_KEY:   ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      # 💡 [핵심 추가] 결과 파일(CSV)을 레포지토리에 자동 저장하는 단계
-      - name: Commit and Push CSV if changed
+      # 5. results_all.csv 를 레포에 자동 커밋 & 푸시
+      #    → 대시보드 HTML 이 이 파일을 읽어서 자동 업데이트됨
+      - name: Commit and push results_all.csv
         run: |
-          git config --global user.name "github-actions[bot]"
+          git config --global user.name  "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add *.csv
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update GEO Measurement CSV [skip ci]" && git push)
+          git add results_all.csv semantic_*.json
+          git diff --staged --quiet \
+            || git commit -m "GEO 측정 자동 업데이트 $(date +'%Y-%m-%d') [skip ci]"
+          git push
