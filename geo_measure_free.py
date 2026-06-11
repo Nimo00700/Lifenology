@@ -114,7 +114,7 @@ def query_gemma(question):
     """Gemma 2 9B via Groq — 무료"""
     try:
         r = groq_client.chat.completions.create(
-            model="gemma2-9b-it",
+            model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": question}],
             max_tokens=600, temperature=0.7,
         )
