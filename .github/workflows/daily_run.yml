@@ -2,18 +2,23 @@ name: Daily GEO Measurement
 
 on:
   schedule:
-    - cron: '0 1 * * *'   # 매일 오전 10시 KST (세계표준시 기준 오전 1시)
-  workflow_dispatch:      # 💡 수동으로도 실행해볼 수 있게 해주는 버튼 추가
+    - cron: '0 1 * * *'   # 매일 오전 10시 KST
+  workflow_dispatch:      # 수동 실행 버튼
 
 jobs:
   measure:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
+        
       - run: pip install groq google-generativeai sentence-transformers
+      
+      # 💡 이 아래 두 줄을 주목해주세요! working-directory 설정을 추가했습니다.
       - run: python geo_measure_free.py
+        working-directory: .
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
