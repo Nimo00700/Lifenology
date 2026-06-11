@@ -8,6 +8,11 @@ on:
 jobs:
   measure:
     runs-on: ubuntu-latest
+    
+    # 💡 이 부분이 추가되었습니다 (자동 저장할 수 있는 권한 부여)
+    permissions:
+      contents: write
+      
     steps:
       - uses: actions/checkout@v4
       
@@ -21,3 +26,11 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      # 💡 [핵심 추가] 결과 파일(CSV)을 레포지토리에 자동 저장하는 단계
+      - name: Commit and Push CSV if changed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add *.csv
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update GEO Measurement CSV [skip ci]" && git push)
